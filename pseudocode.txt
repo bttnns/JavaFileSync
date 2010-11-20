@@ -1,0 +1,27 @@
+Client connects to running server
+
+Server stores the directory in its PWD
+Client passes in directory to sync + serverIP
+
+Client sends dirName + modifiedTime
+Server sends Exists or not
+If file exists on server && server modified last
+   update client file
+else
+   update server file
+move to next file
+
+Server sends dirName
+Client sends exists or not
+if does not exist
+   ask if would like to delete servers copy
+   if yes
+     delete server copy
+   if no
+     send server copy to client
+   if noALL
+     set noAll flag and always take servers copy
+   else {default}
+     do nothing
+move to next file
+end
