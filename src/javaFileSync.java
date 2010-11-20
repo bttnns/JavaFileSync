@@ -6,15 +6,10 @@ public class javaFileSync {
 	public static void main(String[] args) {
 		if(args.length > 0) {
 			if (args[0].equalsIgnoreCase("-s")) {
-				System.out.println("Server selected!");
 				server();
 			} else if (args[0].equalsIgnoreCase("-c") && args.length > 1 && args.length < 3) {
-					System.out.println("Client Selected!");
-					System.out.println("Dir to sync: " + args[2]);
-					System.out.println("Server IP: " + args[1]);
-					client(args[2], args[1]);
+				client(args[2], args[1]);
 			} else if (args[0].equalsIgnoreCase("-t") && args.length > 1 && args.length < 4) {
-				System.out.println("Secret Testing function!");
 				testing(args[2], args[1]);
 			} else {
 				System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
@@ -25,14 +20,17 @@ public class javaFileSync {
 	}
 
 	public static void server(){
-		
+		System.out.println("Server selected!");
 	}
 	
 	public static void client(String dirName, String serverIP){
-		
+		System.out.println("Client Selected!");
+		System.out.println("Dir to sync: " + dirName);
+		System.out.println("Server IP: " + serverIP);
 	}
 	
 	public static void testing(String dirName, String serverIP){
+		System.out.println("Secret Testing function!");
 		File f = new File(dirName);
 		visitAllFiles(f);
 	}
