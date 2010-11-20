@@ -3,16 +3,40 @@ import java.io.File;
 
 public class javaFileSync {
 
-	/**
-	 * @param args
-	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		File f = new File(args[0]);
-		
-		visitAllFiles(f);
+		if(args.length > 0) {
+			if (args[0].equalsIgnoreCase("-s")) {
+				System.out.println("Server selected!");
+				server();
+			} else if (args[0].equalsIgnoreCase("-c") && args.length > 1 && args.length < 3) {
+					System.out.println("Client Selected!");
+					System.out.println("Dir to sync: " + args[2]);
+					System.out.println("Server IP: " + args[1]);
+					client(args[2], args[1]);
+			} else if (args[0].equalsIgnoreCase("-t") && args.length > 1 && args.length < 4) {
+				System.out.println("Secret Testing function!");
+				testing(args[2], args[1]);
+			} else {
+				System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
+			}
+		} else {
+			System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
+		}
 	}
 
+	public static void server(){
+		
+	}
+	
+	public static void client(String dirName, String serverIP){
+		
+	}
+	
+	public static void testing(String dirName, String serverIP){
+		File f = new File(dirName);
+		visitAllFiles(f);
+	}
+	
 	// Process all files and directories under dir
 	public static void visitAllDirsAndFiles(File dir) {
 	    //process(dir);
