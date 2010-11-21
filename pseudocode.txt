@@ -25,3 +25,69 @@ if does not exist
      do nothing
 move to next file
 end
+
+
+
+2 way talking:
+
+CLIENT: dirName
+Server: EXISTS or NOEXISTS
+   
+if directory
+   CLIENT: dirName DiR
+   SERVER: OK
+else
+   CLIENT: fileName lastModified
+   SERVER: OK or NO
+   if OK
+      CLIENT: SEND FILE
+      SERVER: OK
+   else
+      CLIENT: OK
+      SERVER: SEND FILE
+      CLIENT: OK
+      SERVER: SEND LAST MODIFIED
+   end
+end
+
+CLIENT: DONE
+
+if EXISTS
+   if directory
+      SERVER: dirName DiR
+      CLIENT: OK or NO
+      if NO
+         SERVER: OK
+         CLIENT: ask user if he/she would like to delete servers copy
+                 reply YE (delete) or NO (get servers copy)
+                 or DN (do nothing)
+         if YE
+            SERVER: delete directory
+         if NO
+            CLIENT: make directory
+         if DN
+            do nothing
+         end
+      end
+   else
+      SERVER: fileName
+      CLIENT: OK or NO
+      if NO
+         SERVER: OK
+         CLIENT: ask user if he/she would like to delete servers copy
+                 reply YE (delete) or NO (get servers copy)
+                 or DN (do nothing)
+         if YE
+            SERVER: delete file
+         if NO
+            SERVER: SEND FILE
+            CLIENT: OK
+            SERVER: SEND LASTMODIFIED
+            CLIENT: OK
+         if DN
+            do nothing
+         end
+      end
+   end
+end
+

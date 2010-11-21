@@ -1,5 +1,7 @@
 package net.quaa.jfs;
 
+import java.io.File;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
@@ -44,9 +46,18 @@ public class Client {
 		}
 		
 		Socket sock = new Socket(serverIP, PORT_NUMBER);
-		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
+		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send directory name to server
 		oos.writeObject(localDirName);
 		oos.flush();
+		
+		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
+		String fExists = (String) ois.readObject();
+		
+		visitAllDirsAndFiles(new File(dirName), sock);
+
+		if(fExists.equals("EXISTS")) {
+			updateFromServer(sock);
+		}
 		
 /*		//check to see if file exists on server
 		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
@@ -74,6 +85,23 @@ public class Client {
 			System.out.println("Server replied that " + fileName + " does not exist, closing connection.");
 		}
 */		oos.close();
+		ois.close();
 		sock.close();
+	}
+	
+	// Process all files and directories under dir
+	public static void visitAllDirsAndFiles(File dir, Socket sock) {
+		// DO WORK HERE
+		System.out.println("Name: " + dir.getName() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
+	    if (dir.isDirectory()) {
+	        String[] children = dir.list();
+	        for (int i=0; i<children.length; i++) {
+	            visitAllDirsAndFiles(new File(dir, children[i]), sock);	            	
+	        }
+	    }
+	}
+	
+	public static void updateFromServer(Socket sock) {
+		
 	}
 }
