@@ -9,7 +9,8 @@ import java.net.Socket;
 
 
 public class javaFileSync {
-
+	private static final int PORT_NUMBER = 17555;
+	
 	public static void main(String[] args) {
 		try {
 			if(args.length > 0) {
@@ -31,7 +32,7 @@ public class javaFileSync {
 	public static void server() throws Exception {
 		System.out.println("Starting File Sync Server!");
 		
-		ServerSocket servsock = new ServerSocket(17555);
+		ServerSocket servsock = new ServerSocket(PORT_NUMBER);
 		
 		while (true) {
 			Socket sock = servsock.accept();
@@ -64,10 +65,43 @@ public class javaFileSync {
 		}
 	}
 	
-	public static void client(String dirName, String serverIP) {
+	public static void client(String dirName, String serverIP) throws Exception {
 		System.out.println("Client Selected!");
 		System.out.println("Dir to sync: " + dirName);
 		System.out.println("Server IP: " + serverIP);
+		
+		Socket sock = new Socket(serverIP, PORT_NUMBER);
+		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
+		oos.writeObject(dirName);
+		oos.flush();
+		
+/*		//check to see if file exists on server
+		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
+		String fExists = (String) ois.readObject();
+
+		if(fExists.equals("1")){
+			System.out.print("Receiving file: ");
+			byte[] mybytearray = new byte[1024];
+			InputStream is = sock.getInputStream();
+			FileOutputStream fos = new FileOutputStream(fileName);
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
+			int bytesRead = 0;
+			int current = 0;
+			while((bytesRead = is.read(mybytearray, 0, mybytearray.length)) != -1){
+				bos.write(mybytearray, 0, bytesRead);
+				current = current + bytesRead;
+				System.out.print(".");
+			}
+			System.out.println();
+			System.out.println("Done!");
+			oos.close();
+			ois.close();
+			bos.close();
+		}else{
+			System.out.println("Server replied that " + fileName + " does not exist, closing connection.");
+		}
+*/		oos.close();
+		sock.close();
 	}
 	
 	// Process all files and directories under dir
