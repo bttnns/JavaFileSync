@@ -16,7 +16,7 @@ public class javaFileSync {
 			if(args.length > 0) {
 				if (args[0].equalsIgnoreCase("-s")) {
 					server();
-				} else if (args[0].equalsIgnoreCase("-c") && args.length > 1 && args.length < 3) {
+				} else if (args[0].equalsIgnoreCase("-c") && args.length > 1 && args.length < 4) {
 					client(args[2], args[1]);
 				} else {
 					System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
@@ -25,7 +25,7 @@ public class javaFileSync {
 				System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
 			}
 		} catch (Exception e) {
-			System.out.print(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -70,9 +70,33 @@ public class javaFileSync {
 		System.out.println("Dir to sync: " + dirName);
 		System.out.println("Server IP: " + serverIP);
 		
+		String localDirName = dirName; //cleaning up the users input
+		if(dirName.contains("/")){
+			if(dirName.lastIndexOf("/") != (dirName.length() - 1)) {
+				localDirName = dirName.substring(dirName.lastIndexOf("/"));
+			} else {
+				localDirName = dirName.substring(0, (dirName.length() - 1));
+				if(localDirName.contains("/"))
+					localDirName = localDirName.substring(localDirName.lastIndexOf("/"));
+			}
+		}
+		
+		if(localDirName.equals(".")){
+			System.out.println("Please input a dir name instead of ./ or .");
+			Thread.sleep(10);
+			System.exit(0);
+		}
+		
+		if(!localDirName.startsWith("./")){ //still cleaning up their input
+			if(localDirName.startsWith("/"))
+				localDirName = "." + localDirName;
+			else
+				localDirName = "./" + localDirName;
+		}
+		
 		Socket sock = new Socket(serverIP, PORT_NUMBER);
 		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
-		oos.writeObject(dirName);
+		oos.writeObject(localDirName);
 		oos.flush();
 		
 /*		//check to see if file exists on server
