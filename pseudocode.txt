@@ -53,39 +53,38 @@ end
 CLIENT: DONE
 
 if EXISTS = TRUE
-SERVER: fName
    if directory
       SERVER: dirName DiR
-      CLIENT: OK or NO
-      if NO
-         SERVER: OK
+      CLIENT: TRUE or FALSE
+      if FALSE
+         SERVER: TRUE
          CLIENT: ask user if he/she would like to delete servers copy
-                 reply YE (delete) or NO (get servers copy)
-                 or DN (do nothing)
-         if YE
+                 reply Y (delete) or N (get servers copy)
+                 or D (do nothing)
+         if Y
             SERVER: delete directory
-         if NO
+         if N
             CLIENT: make directory
-         if DN
+         if D
             do nothing
          end
       end
-   else
+   else if TRUE
       SERVER: fileName
-      CLIENT: OK or NO
-      if NO
-         SERVER: OK
+      CLIENT: TRUE or FALSE
+      if TRUE
+         SERVER: TRUE
          CLIENT: ask user if he/she would like to delete servers copy
-                 reply YE (delete) or NO (get servers copy)
-                 or DN (do nothing)
-         if YE
+                 reply Y (delete) or N (get servers copy)
+                 or D (do nothing)
+         if Y
             SERVER: delete file
-         if NO
+         if N
             SERVER: SEND FILE
             CLIENT: OK
             SERVER: SEND LASTMODIFIED
             CLIENT: OK
-         if DN
+         if D
             do nothing
          end
       end
