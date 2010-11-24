@@ -31,28 +31,29 @@ end
 2 way talking:
 
 CLIENT: dirName
-Server: EXISTS or NOEXISTS
+Server: exists = TRUE or FALSE
    
 if directory
    CLIENT: dirName DiR
-   SERVER: OK
+   SERVER: true
 else
    CLIENT: fileName lastModified
-   SERVER: OK or NO
-   if OK
+   SERVER: TRUE or FALSE
+   if TRUE
       CLIENT: SEND FILE
-      SERVER: OK
-   else
-      CLIENT: OK
+      SERVER: TRUE
+   else if FALSE
+      CLIENT: TRUE
       SERVER: SEND FILE
-      CLIENT: OK
+      CLIENT: TRUE
       SERVER: SEND LAST MODIFIED
    end
 end
 
 CLIENT: DONE
 
-if EXISTS
+if EXISTS = TRUE
+SERVER: fName
    if directory
       SERVER: dirName DiR
       CLIENT: OK or NO
@@ -91,3 +92,4 @@ if EXISTS
    end
 end
 
+SERVER: DONE
