@@ -43,11 +43,11 @@ if directory
 else
    CLIENT: fileName
    SERVER: true
+   CLIENT: isDirectory = FALSE
+   SERVER: true
    CLIENT: PATH
    SERVER: true
    CLIENT: lastModified
-   SERVER: true
-   CLIENT: isDirectory = FALSE
    SERVER: TRUE or FALSE (update?)
    if TRUE
       CLIENT: SEND FILE
