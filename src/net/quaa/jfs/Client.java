@@ -12,16 +12,16 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 public class Client {
-	private String dirName;
-	private String serverIP;
-	private String fullDirName;
-	private int PORT_NUMBER;
+	private static String dirName;
+	private static String serverIP;
+	private static String fullDirName;
+	private static int PORT_NUMBER;
 	private static final String DONE = "DONE";
 	
 	public Client(String dirName, String fullDirName, String serverIP, int port) {
-		this.dirName = dirName;
-		this.serverIP = serverIP;
-		this.fullDirName = fullDirName;
+		Client.dirName = dirName;
+		Client.serverIP = serverIP;
+		Client.fullDirName = fullDirName;
 		PORT_NUMBER = port;
 		
 		System.out.println("Client Selected!");
@@ -33,7 +33,7 @@ public class Client {
 		
 		Socket sock = new Socket(serverIP, PORT_NUMBER);
 		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send directory name to server
-		oos.writeChars(dirName);
+		oos.writeChars(new String(dirName));
 		oos.flush();
 		
 		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
@@ -41,7 +41,7 @@ public class Client {
 		
 		visitAllDirsAndFiles(new File(fullDirName), sock);
 		
-		oos.writeChars(DONE);
+		oos.writeChars(new String(DONE));
 		oos.flush();
 		
 		if(fExists) 
@@ -54,12 +54,28 @@ public class Client {
 	
 	// Process all files and directories under dir
 	public static void visitAllDirsAndFiles(File dir, Socket sock) throws Exception{
+		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send pathName fileName LastModified to server
+		oos.writeChars(new String(dir.getName()));
+		oos.flush();
+		
+		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // wait for server to say ok
+		ois.readBoolean();
+		
+		oos.writeBoolean(new Boolean(dir.isDirectory()));
+		oos.flush();
+		
+		ois.readBoolean();
+		
+		oos.writeChars(new String(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullDirName) + fullDirName.length()))));
+		oos.flush();
+		
+		ois.readBoolean();
+		
 		if(!dir.isDirectory()) {
-			ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send fileName LastModified to server
-			oos.writeChars(dir.getName() + " " + dir.lastModified());
+			oos.writeLong(new Long(dir.lastModified()));
 			oos.flush();
 			
-			ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive SEND or RECEIVE
+			// receive SEND or RECEIVE
 			Boolean updateToServer = (Boolean) ois.readObject(); //if true update server, else update from server
 			
 			if (updateToServer) {  // send file to server
@@ -76,12 +92,12 @@ public class Client {
 			} else { // update file from server.  
 				dir.delete(); // first delete the current file
 				
-				oos.writeBoolean(true); // send "Ready"
+				oos.writeBoolean(new Boolean(true)); // send "Ready"
 				oos.flush();
 				
 				receiveFile(dir, sock);
 				
-				oos.writeBoolean(true); // send back ok
+				oos.writeBoolean(new Boolean(true)); // send back ok
 				oos.flush();
 				
 				Long updateLastModified = (Long) ois.readObject(); // update the last modified date for this file from the server
@@ -90,20 +106,6 @@ public class Client {
 				oos.close();
 				ois.close();
 			}
-			
-		} else {
-			ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send directory name to server
-			oos.writeChars(dir.getName() + "DiR"); 
-			oos.flush();
-			
-			ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
-			Boolean ok = (Boolean) ois.readObject();
-			
-			oos.close();
-			ois.close();
-			
-			if(!ok) // if did not receive an ok back from the server, re-run.
-				visitAllDirsAndFiles(dir, sock);
 		}
 		
 /* debug */		System.out.println("Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());

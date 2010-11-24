@@ -34,11 +34,21 @@ CLIENT: dirName
 Server: exists = TRUE or FALSE
    
 if directory
-   CLIENT: dirName DiR
+   CLIENT: dirName
+   SERVER: true
+   CLIENT: isDirectory = TRUE
+   SERVER: true
+   CLIENT: PATH
    SERVER: true
 else
-   CLIENT: fileName lastModified
-   SERVER: TRUE or FALSE
+   CLIENT: fileName
+   SERVER: true
+   CLIENT: PATH
+   SERVER: true
+   CLIENT: lastModified
+   SERVER: true
+   CLIENT: isDirectory = FALSE
+   SERVER: TRUE or FALSE (update?)
    if TRUE
       CLIENT: SEND FILE
       SERVER: TRUE
@@ -49,6 +59,8 @@ else
       SERVER: SEND LAST MODIFIED
    end
 end
+CLIENT: DIR..
+SERVER: OK
 
 CLIENT: DONE
 

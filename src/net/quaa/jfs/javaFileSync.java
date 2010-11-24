@@ -4,6 +4,8 @@ import java.io.File;
 
 public class javaFileSync {
 	private static final int PORT_NUMBER = 17555;
+	private static String localName;
+	private static String fullPathName;
 	
 	public static void main(String[] args) {
 		try {
@@ -12,10 +14,11 @@ public class javaFileSync {
 					server();
 				} if (args[0].equals("-t")) {
 					System.out.println("You have found the secret testing function!");
-					String localName = cleanUpInput(args[1]);
-					testing(new File(localName));
+					fullPathName = args[1];
+					localName = cleanUpInput(args[1]);
+					testing(new File(localName), args[1]);
 				} else if (args[0].equalsIgnoreCase("-c") && args.length > 1 && args.length < 4) {
-					String localName = cleanUpInput(args[1]);
+					localName = cleanUpInput(args[1]);
 					client(localName, args[2], args[1]);
 				} else {
 					System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
@@ -38,8 +41,9 @@ public class javaFileSync {
 		c.runClient();
 	}
 	
-	public static void testing(File dirName) throws Exception {
+	public static void testing(File dirName, String fullPathName) throws Exception {
 		visitAllDirsAndFiles(dirName);
+
 	}
 	
 	public static String cleanUpInput(String userInput) throws Exception {
@@ -82,6 +86,7 @@ public class javaFileSync {
 	public static void visitAllDirsAndFiles(File dir) {
 	    //process(dir);
 		System.out.println("Name: " + dir.getName() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
+		System.out.println(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullPathName) + fullPathName.length())) + " Directory? " + dir.isDirectory());
 	    if (dir.isDirectory()) {
 	        String[] children = dir.list();
 	        for (int i=0; i<children.length; i++) {
@@ -95,7 +100,6 @@ public class javaFileSync {
 	    if (dir.isDirectory()) {
 		    //process(dir);
 			System.out.println("Name: " + dir.getName() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
-
 	        String[] children = dir.list();
 	        for (int i=0; i<children.length; i++) {
 	            visitAllDirs(new File(dir, children[i]));
