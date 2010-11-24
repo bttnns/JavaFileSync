@@ -33,7 +33,7 @@ public class Client {
 		
 		Socket sock = new Socket(serverIP, PORT_NUMBER);
 		ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send directory name to server
-		oos.writeObject(dirName);
+		oos.writeChars(dirName);
 		oos.flush();
 		
 		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
@@ -41,7 +41,7 @@ public class Client {
 		
 		visitAllDirsAndFiles(new File(fullDirName), sock);
 		
-		oos.writeObject(DONE);
+		oos.writeChars(DONE);
 		oos.flush();
 		
 		if(fExists) 
@@ -56,7 +56,7 @@ public class Client {
 	public static void visitAllDirsAndFiles(File dir, Socket sock) throws Exception{
 		if(!dir.isDirectory()) {
 			ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send fileName LastModified to server
-			oos.writeObject(dir.getName() + " " + dir.lastModified());
+			oos.writeChars(dir.getName() + " " + dir.lastModified());
 			oos.flush();
 			
 			ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive SEND or RECEIVE
@@ -76,12 +76,12 @@ public class Client {
 			} else { // update file from server.  
 				dir.delete(); // first delete the current file
 				
-				oos.writeObject(true); // send "Ready"
+				oos.writeBoolean(true); // send "Ready"
 				oos.flush();
 				
 				receiveFile(dir, sock);
 				
-				oos.writeObject(true); // send back ok
+				oos.writeBoolean(true); // send back ok
 				oos.flush();
 				
 				Long updateLastModified = (Long) ois.readObject(); // update the last modified date for this file from the server
@@ -93,7 +93,7 @@ public class Client {
 			
 		} else {
 			ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream()); // send directory name to server
-			oos.writeObject(dir);
+			oos.writeChars(dir.getName() + "DiR"); 
 			oos.flush();
 			
 			ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
