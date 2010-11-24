@@ -39,8 +39,12 @@ public class Client {
 		ObjectInputStream ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
 		Boolean fExists = (Boolean) ois.readObject();
 		
-		visitAllDirsAndFiles(new File(fullDirName), sock);
-		
+		File baseDir = new File(fullDirName); // skipping the base dir as it already should be set up on the server
+		String[] children = baseDir.list();
+	    for (int i=0; i<children.length; i++) {
+	    	visitAllDirsAndFiles(new File(baseDir, children[i]), sock);	            	
+	    }
+	    	
 		oos.writeChars(new String(DONE));
 		oos.flush();
 		
