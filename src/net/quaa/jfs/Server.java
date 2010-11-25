@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Vector;
 
 public class Server {
 	private int PORT_NUMBER;
@@ -27,6 +28,7 @@ public class Server {
 		servsock = new ServerSocket(PORT_NUMBER);
 		
 		while (true) {
+			System.out.println("NEW CLIENT");
 			sock = servsock.accept();
 
 			ois = new ObjectInputStream(sock.getInputStream());
@@ -46,7 +48,7 @@ public class Server {
 			Boolean isClientDone = false;
 			
 			while (!isClientDone) {
-				String fName = (String) ois.readObject();
+/*				String fName = (String) ois.readObject();
 				
 				if(fName.equals(DONE)) { // check if we are done
 					isClientDone = true;
@@ -57,21 +59,36 @@ public class Server {
 				oos.flush();
 				
 				Boolean isDirectory = (Boolean) ois.readObject();
+*/				
+				Vector<String> vec = (Vector<String>) ois.readObject();
 				
-				if(isDirectory) {
-					oos.writeObject(new Boolean(true));
+				oos.close();
+				ois.close();
+				sock.close();
+				sock = servsock.accept();
+				oos = new ObjectOutputStream(sock.getOutputStream());
+				ois = new ObjectInputStream(sock.getInputStream());
+				System.out.println(vec.elementAt(0));
+				if(vec.elementAt(0).equals(DONE)) {
+					System.out.println(DONE);
+					isClientDone = true;
+					break;
+				}
+
+				if(vec.size() == 2) { // if the size is 2 then this is a directory
+/*					oos.writeObject(new Boolean(true));
 					oos.flush();
 					
 					String path = (String) ois.readObject();
-					
-					File newDir = new File(baseDir, path);
+*/					
+					File newDir = new File(baseDir, vec.elementAt(1));
 					if (!newDir.exists())
 						newDir.mkdir();
 					
 					oos.writeObject(new Boolean(true));
 					oos.flush();
 				} else {
-					oos.writeObject(new Boolean(true));
+/*					oos.writeObject(new Boolean(true));
 					oos.flush();
 					
 					String path = (String) ois.readObject();
@@ -80,10 +97,11 @@ public class Server {
 					oos.flush();
 					
 					Long lastModified = (Long) ois.readObject();
-					
-					File newFile = new File(baseDir, path);
+*/					
+					File newFile = new File(baseDir, vec.elementAt(1));
 					Integer updateFromClient = 2; // default = do nothing
 					
+					Long lastModified = new Long(vec.elementAt(2));
 					if (!newFile.exists() || (newFile.lastModified() <= lastModified))
 						updateFromClient = 1;
 					else

@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Vector;
 
 public class Client {
 	private static String dirName;
@@ -43,12 +44,17 @@ public class Client {
 		String[] children = baseDir.list();
 		
 	    for (int i=0; i<children.length; i++) {
-	    	visitAllDirsAndFiles(new File(baseDir, children[i]));	            	
+	    	visitAllDirsAndFiles(new File(baseDir, children[i]));	
+	    	System.out.print(i);
 	    }
-	    
-		oos.writeObject(new String(DONE));
+	    System.out.print("Setting done");
+	    Vector<String> vecDONE = new Vector<String>();
+	    vecDONE.add(DONE);
+		oos.writeObject(vecDONE);
 		oos.flush();
-		
+		System.out.println(DONE);
+
+	
 		if(fExists) 
 			updateFromServer(sock, fullDirName);
 		
@@ -59,7 +65,7 @@ public class Client {
 	
 	// Process all files and directories under dir
 	public static void visitAllDirsAndFiles(File dir) throws Exception{
-		oos.writeObject(new String(dir.getName()));
+/*		oos.writeObject(new String(dir.getName()));
 		oos.flush();
 		
 		ois.readObject();
@@ -74,10 +80,34 @@ public class Client {
 		
 		ois.readObject();
 		
-		if(!dir.isDirectory()) {
-			oos.writeObject(new Long(dir.lastModified()));
+*/		
+		Vector<String> vec = new Vector<String>();
+		vec.add(dir.getName());
+		vec.add(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullDirName) + fullDirName.length())));
+		
+		if(dir.isDirectory()) {
+			oos.writeObject(vec);
 			oos.flush();
+			oos.close();
+			ois.close();
+			sock = new Socket(serverIP, PORT_NUMBER);
+			oos = new ObjectOutputStream(sock.getOutputStream());
+			ois = new ObjectInputStream(sock.getInputStream());
 			
+			ois.readObject();
+		} else {
+//			oos.writeObject(new Long(dir.lastModified()));
+//			oos.flush();
+
+			vec.add(new Long(dir.lastModified()).toString());
+			oos.writeObject(vec);
+			oos.flush();
+			oos.close();
+			ois.close();
+			sock.close();
+			sock = new Socket(serverIP, PORT_NUMBER);
+			oos = new ObjectOutputStream(sock.getOutputStream());
+			ois = new ObjectInputStream(sock.getInputStream());
 			// receive SEND or RECEIVE
 			Integer updateToServer = (Integer) ois.readObject(); //if true update server, else update from server
 
