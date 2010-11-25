@@ -79,17 +79,17 @@ public class Client {
 			oos.flush();
 			
 			// receive SEND or RECEIVE
-			Boolean updateToServer = (Boolean) ois.readObject(); //if true update server, else update from server
+			Integer updateToServer = (Integer) ois.readObject(); //if true update server, else update from server
 
-			if (updateToServer) {  // send file to server
+			if (updateToServer == 1) {  // send file to server
 				sendFile(dir);
 
 				ois.readObject(); // make sure server got the file
 				
-			} else { // update file from server.  
+			} else if (updateToServer == 0) { // update file from server.  
 				dir.delete(); // first delete the current file
 				
-				oos.writeObject(new Boolean(true)); // send "Ready"
+				oos.writeObject(new Boolean(true)); // send "Ready" 
 				oos.flush();
 				
 				receiveFile(dir);
@@ -99,14 +99,9 @@ public class Client {
 				
 				Long updateLastModified = (Long) ois.readObject(); // update the last modified date for this file from the server
 				dir.setLastModified(updateLastModified);
-				
-				oos.close();
-				ois.close();
-			}
+
+			} // no need to check if update to server == 2 because we do nothing here
 		}
-		
-/* debug */		System.out.println("Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
-	    
 		if (dir.isDirectory()) {
 	        String[] children = dir.list();
 	        for (int i=0; i<children.length; i++) {
@@ -125,7 +120,6 @@ public class Client {
 		{
 			oos.write(buff,0,bytesRead);
 		}
-		oos.flush();
 		in.close();
 		// after sending a file you need to close the socket and reopen one.
 		oos.flush();
@@ -135,6 +129,8 @@ public class Client {
 		sock = new Socket(serverIP, PORT_NUMBER);
 		oos = new ObjectOutputStream(sock.getOutputStream());
 		ois = new ObjectInputStream(sock.getInputStream());
+		
+		printDebug(true, dir);
 	}
 	
 	public static void receiveFile(File dir) throws Exception {
@@ -154,6 +150,8 @@ public class Client {
 		sock = new Socket(serverIP, PORT_NUMBER);
 		ois = new ObjectInputStream(sock.getInputStream());
 		oos = new ObjectOutputStream(sock.getOutputStream());
+		
+		printDebug(false, dir);
 	}
 	
 	public static void updateFromServer(Socket sock, String fullDirName) throws Exception {
@@ -164,5 +162,13 @@ public class Client {
 		
 // need to implement this part		
 				
+	}
+	
+	public static void printDebug(Boolean sending, File dir){
+		if(sending)
+			System.out.println("SEND=Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
+		else
+			System.out.println("RECV=Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
+
 	}
 }

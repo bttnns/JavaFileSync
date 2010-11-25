@@ -1,0 +1,7 @@
+PROBLEMS
+
+Server does not have file:
+    Client will receive from server
+
+Client does not have file:
+    Nothing happens.

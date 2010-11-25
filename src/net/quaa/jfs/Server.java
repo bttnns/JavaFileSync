@@ -82,11 +82,20 @@ public class Server {
 					Long lastModified = (Long) ois.readObject();
 					
 					File newFile = new File(baseDir, path);
-					Boolean updateFromClient = !newFile.exists() && (newFile.lastModified() <= lastModified);
-					if(updateFromClient) { // If true receive file from client
+					Integer updateFromClient = 2; // default = do nothing
+					
+					if (!newFile.exists() || (newFile.lastModified() <= lastModified))
+						updateFromClient = 1;
+					else
+						updateFromClient = 0;
+					
+					if(newFile.exists() && newFile.lastModified() == lastModified)
+						updateFromClient = 2;
+						
+					if(updateFromClient == 1) { // If true receive file from client
 						newFile.delete();
 						
-						oos.writeObject(new Boolean(updateFromClient));
+						oos.writeObject(new Integer(updateFromClient));
 						oos.flush();
 						
 						receiveFile(newFile);
@@ -94,8 +103,8 @@ public class Server {
 						newFile.setLastModified(lastModified);
 						
 						oos.writeObject(new Boolean(true));
-					} else { // if false send file to client
-						oos.writeObject(new Boolean(updateFromClient));
+					} else if (updateFromClient == 0) { // if false send file to client
+						oos.writeObject(new Integer(updateFromClient));
 						oos.flush();
 						
 						ois.readObject();
@@ -105,6 +114,9 @@ public class Server {
 						ois.readObject();
 						
 						oos.writeObject(new Long(newFile.lastModified()));
+						oos.flush();
+					} else { //updateFromClient == 2 // do nothing
+						oos.writeObject(new Integer(updateFromClient));
 						oos.flush();
 					}
 				}
@@ -130,7 +142,6 @@ public class Server {
 		{
 			oos.write(buff,0,bytesRead);
 		}
-		oos.flush();
 		in.close();
 		// after sending a file you need to close the socket and reopen one.
 		oos.flush();
