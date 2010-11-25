@@ -34,20 +34,25 @@ CLIENT: dirName
 Server: exists = TRUE or FALSE
    
 if directory
-   CLIENT: dirName
-   SERVER: true
-   CLIENT: isDirectory = TRUE
-   SERVER: true
-   CLIENT: PATH
+old   CLIENT: dirName
+old   SERVER: true
+old   CLIENT: isDirectory = TRUE
+old   SERVER: true
+old   CLIENT: PATH
+old   SERVER: true
+
+   CLIENT: VECTOR<STRING> = dirName, PATH
    SERVER: true
 else
-   CLIENT: fileName
-   SERVER: true
-   CLIENT: isDirectory = FALSE
-   SERVER: true
-   CLIENT: PATH
-   SERVER: true
-   CLIENT: lastModified
+old   CLIENT: fileName
+old   SERVER: true
+old   CLIENT: isDirectory = FALSE
+old   SERVER: true
+old   CLIENT: PATH
+old   SERVER: true
+old   CLIENT: lastModified
+
+   CLIENT: VECTOR<STRING> = fileName, PATH, lastModified
    SERVER: TRUE or FALSE (update?)
    if TRUE
       CLIENT: SEND FILE
@@ -59,10 +64,11 @@ else
       SERVER: SEND LAST MODIFIED
    end
 end
-CLIENT: DIR..
 SERVER: OK
 
 CLIENT: DONE
+
+// begin 2 way talking here.
 
 if EXISTS = TRUE
    if directory

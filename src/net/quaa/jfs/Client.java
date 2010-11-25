@@ -18,96 +18,65 @@ public class Client {
 	private static Socket sock;
 	private static ObjectInputStream ois;
 	private static ObjectOutputStream oos;
-	
+
 	public Client(String dirName, String fullDirName, String serverIP, int port) {
 		Client.dirName = dirName;
 		Client.serverIP = serverIP;
 		Client.fullDirName = fullDirName;
 		PORT_NUMBER = port;
-		
+
 		System.out.println("Client Selected!");
 		System.out.println("Dir to sync: " + dirName);
 		System.out.println("Server IP: " + serverIP);
 	}
-	
+
 	public void runClient() throws Exception {
-		
+
 		sock = new Socket(serverIP, PORT_NUMBER);
 		oos = new ObjectOutputStream(sock.getOutputStream()); // send directory name to server
 		oos.writeObject(new String(dirName));
 		oos.flush();
-				
+
 		ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
 		Boolean fExists = (Boolean) ois.readObject();
-		
+
 		File baseDir = new File(fullDirName); // skipping the base dir as it already should be set up on the server
 		String[] children = baseDir.list();
-		
+
 	    for (int i=0; i<children.length; i++) {
-	    	visitAllDirsAndFiles(new File(baseDir, children[i]));	
-	    	System.out.print(i);
+	    	visitAllDirsAndFiles(new File(baseDir, children[i]));
 	    }
-	    System.out.print("Setting done");
 	    Vector<String> vecDONE = new Vector<String>();
 	    vecDONE.add(DONE);
 		oos.writeObject(vecDONE);
 		oos.flush();
-		System.out.println(DONE);
-
+		reinitConn();
 	
-		if(fExists) 
+		if(fExists)
 			updateFromServer(sock, fullDirName);
-		
+
 		oos.close();
 		ois.close();
 		sock.close();
 	}
-	
+
 	// Process all files and directories under dir
-	public static void visitAllDirsAndFiles(File dir) throws Exception{
-/*		oos.writeObject(new String(dir.getName()));
-		oos.flush();
-		
-		ois.readObject();
-		
-		oos.writeObject(new Boolean(dir.isDirectory()));
-		oos.flush();
-		
-		ois.readObject();
-		
-		oos.writeObject(new String(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullDirName) + fullDirName.length()))));
-		oos.flush();
-		
-		ois.readObject();
-		
-*/		
-		Vector<String> vec = new Vector<String>();
+	private static void visitAllDirsAndFiles(File dir) throws Exception{
+			Vector<String> vec = new Vector<String>();
 		vec.add(dir.getName());
 		vec.add(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullDirName) + fullDirName.length())));
-		
+
 		if(dir.isDirectory()) {
 			oos.writeObject(vec);
 			oos.flush();
-			oos.close();
-			ois.close();
-			sock = new Socket(serverIP, PORT_NUMBER);
-			oos = new ObjectOutputStream(sock.getOutputStream());
-			ois = new ObjectInputStream(sock.getInputStream());
-			
+			reinitConn();
+
 			ois.readObject();
 		} else {
-//			oos.writeObject(new Long(dir.lastModified()));
-//			oos.flush();
-
 			vec.add(new Long(dir.lastModified()).toString());
 			oos.writeObject(vec);
 			oos.flush();
-			oos.close();
-			ois.close();
-			sock.close();
-			sock = new Socket(serverIP, PORT_NUMBER);
-			oos = new ObjectOutputStream(sock.getOutputStream());
-			ois = new ObjectInputStream(sock.getInputStream());
+			reinitConn();
 			// receive SEND or RECEIVE
 			Integer updateToServer = (Integer) ois.readObject(); //if true update server, else update from server
 
@@ -115,18 +84,18 @@ public class Client {
 				sendFile(dir);
 
 				ois.readObject(); // make sure server got the file
-				
-			} else if (updateToServer == 0) { // update file from server.  
+
+			} else if (updateToServer == 0) { // update file from server.
 				dir.delete(); // first delete the current file
-				
-				oos.writeObject(new Boolean(true)); // send "Ready" 
+
+				oos.writeObject(new Boolean(true)); // send "Ready"
 				oos.flush();
-				
+
 				receiveFile(dir);
-				
+
 				oos.writeObject(new Boolean(true)); // send back ok
 				oos.flush();
-				
+
 				Long updateLastModified = (Long) ois.readObject(); // update the last modified date for this file from the server
 				dir.setLastModified(updateLastModified);
 
@@ -135,70 +104,63 @@ public class Client {
 		if (dir.isDirectory()) {
 	        String[] children = dir.list();
 	        for (int i=0; i<children.length; i++) {
-	            visitAllDirsAndFiles(new File(dir, children[i]));	            	
+	            visitAllDirsAndFiles(new File(dir, children[i]));
 	        }
 	    }
 	}
-	
-	public static void sendFile(File dir) throws Exception {
+
+	private static void sendFile(File dir) throws Exception {
 		byte[] buff = new byte[sock.getSendBufferSize()];
 		int bytesRead = 0;
-		
+
 		InputStream in = new FileInputStream(dir);
 
-		while((bytesRead = in.read(buff))>0)
-		{
+		while((bytesRead = in.read(buff))>0) {
 			oos.write(buff,0,bytesRead);
 		}
 		in.close();
 		// after sending a file you need to close the socket and reopen one.
 		oos.flush();
-		oos.close();
-		ois.close();
-		sock.close();
-		sock = new Socket(serverIP, PORT_NUMBER);
-		oos = new ObjectOutputStream(sock.getOutputStream());
-		ois = new ObjectInputStream(sock.getInputStream());
-		
+		reinitConn();
+
 		printDebug(true, dir);
 	}
-	
-	public static void receiveFile(File dir) throws Exception {
+
+	private static void receiveFile(File dir) throws Exception {
 		FileOutputStream wr = new FileOutputStream(dir);
 		byte[] outBuffer = new byte[sock.getReceiveBufferSize()];
 		int bytesReceived = 0;
-		while((bytesReceived = ois.read(outBuffer))>0)
-		{
+		while((bytesReceived = ois.read(outBuffer))>0) {
 			wr.write(outBuffer,0,bytesReceived);
 		}
 		wr.flush();
 		wr.close();
-		
+
+		reinitConn();
+
+		printDebug(false, dir);
+	}
+
+	private static void updateFromServer(Socket sock, String fullDirName) throws Exception {
+		//oos = new ObjectOutputStream(sock.getOutputStream()); // send fileName LastModified to server
+		//ois = new ObjectInputStream(sock.getInputStream()); // receive SEND or RECEIVE
+		//File f = new File(fullDirName);
+// need to implement this part
+	}
+
+	private static void printDebug(Boolean sending, File dir){
+		if(sending)
+			System.out.println("SEND=Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
+		else
+			System.out.println("RECV=Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
+	}
+
+	private static void reinitConn() throws Exception {
 		ois.close();
 		oos.close();
 		sock.close();
 		sock = new Socket(serverIP, PORT_NUMBER);
 		ois = new ObjectInputStream(sock.getInputStream());
 		oos = new ObjectOutputStream(sock.getOutputStream());
-		
-		printDebug(false, dir);
-	}
-	
-	public static void updateFromServer(Socket sock, String fullDirName) throws Exception {
-		//oos = new ObjectOutputStream(sock.getOutputStream()); // send fileName LastModified to server
-		//ois = new ObjectInputStream(sock.getInputStream()); // receive SEND or RECEIVE
-		
-		//File f = new File(fullDirName);
-		
-// need to implement this part		
-				
-	}
-	
-	public static void printDebug(Boolean sending, File dir){
-		if(sending)
-			System.out.println("SEND=Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
-		else
-			System.out.println("RECV=Name: " + dir.getName() + " Dir: " + dir.isDirectory() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
-
 	}
 }
