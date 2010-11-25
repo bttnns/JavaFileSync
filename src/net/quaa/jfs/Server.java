@@ -1,20 +1,21 @@
 package net.quaa.jfs;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Server {
 	private int PORT_NUMBER;
 	private static final String DONE = "DONE";
+	private static Socket sock;
+	private static ObjectOutputStream oos;
+	private static ObjectInputStream ois;
+	private static ServerSocket servsock;
 	
 	public Server(int port) {
 		PORT_NUMBER = port;
@@ -23,12 +24,12 @@ public class Server {
 	public void startServer() throws Exception {
 		System.out.println("Starting File Sync Server!");
 		
-		ServerSocket servsock = new ServerSocket(PORT_NUMBER);
+		servsock = new ServerSocket(PORT_NUMBER);
 		
 		while (true) {
-			Socket sock = servsock.accept();
+			sock = servsock.accept();
 
-			ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
+			ois = new ObjectInputStream(sock.getInputStream());
 			String baseDir = (String) ois.readObject();
 			
 			File fBaseDir = new File(baseDir);
@@ -38,8 +39,8 @@ public class Server {
 			if(!baseDirExists)
 				fBaseDir.mkdir();
 			
-			ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
-			oos.writeBoolean(new Boolean(baseDirExists));
+			oos = new ObjectOutputStream(sock.getOutputStream());
+			oos.writeObject(new Boolean(baseDirExists));
 			oos.flush();
 			
 			Boolean isClientDone = false;
@@ -52,13 +53,13 @@ public class Server {
 					break;
 				}
 				
-				oos.writeBoolean(new Boolean(true));
+				oos.writeObject(new Boolean(true));
 				oos.flush();
 				
-				Boolean isDirectory = ois.readBoolean();
+				Boolean isDirectory = (Boolean) ois.readObject();
 				
 				if(isDirectory) {
-					oos.writeBoolean(new Boolean(true));
+					oos.writeObject(new Boolean(true));
 					oos.flush();
 					
 					String path = (String) ois.readObject();
@@ -67,104 +68,96 @@ public class Server {
 					if (!newDir.exists())
 						newDir.mkdir();
 					
-					oos.writeBoolean(new Boolean(true));
+					oos.writeObject(new Boolean(true));
 					oos.flush();
 				} else {
-					oos.writeBoolean(new Boolean(true));
+					oos.writeObject(new Boolean(true));
 					oos.flush();
 					
 					String path = (String) ois.readObject();
 					
-					oos.writeBoolean(new Boolean(true));
+					oos.writeObject(new Boolean(true));
 					oos.flush();
 					
-					Long lastModified = ois.readLong();
+					Long lastModified = (Long) ois.readObject();
 					
 					File newFile = new File(baseDir, path);
 					Boolean updateFromClient = !newFile.exists() && (newFile.lastModified() <= lastModified);
-					
 					if(updateFromClient) { // If true receive file from client
 						newFile.delete();
 						
-						oos.writeBoolean(new Boolean(updateFromClient));
+						oos.writeObject(new Boolean(updateFromClient));
 						oos.flush();
 						
-						receiveFile(newFile, sock);
+						receiveFile(newFile);
 						
 						newFile.setLastModified(lastModified);
 						
-						oos.writeBoolean(new Boolean(true));
+						oos.writeObject(new Boolean(true));
 					} else { // if false send file to client
-						oos.writeBoolean(new Boolean(updateFromClient));
+						oos.writeObject(new Boolean(updateFromClient));
 						oos.flush();
 						
-						ois.readBoolean();
+						ois.readObject();
 						
-						sendFile(newFile, sock);
+						sendFile(newFile);
 						
-						ois.readBoolean();
+						ois.readObject();
 						
-						oos.writeLong(new Long(newFile.lastModified()));
+						oos.writeObject(new Long(newFile.lastModified()));
 						oos.flush();
 					}
 				}
 			}
 			
 			if(baseDirExists){
-				
+// need to implement this section				
 			}
 			
-/*			if(baseDirExists)
-				System.out.println(baseDir + " is a directory and exists!");
-				System.out.print("Sending file '" + fileName + "' to: " + sock.getInetAddress() + "...");
-				ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
-				oos.writeObject("1");
-				byte[] mybytearray = new byte[(int) f.length()];
-				BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
-				bis.read(mybytearray, 0, mybytearray.length);
-				OutputStream os = sock.getOutputStream();
-				os.write(mybytearray, 0, mybytearray.length);
-				os.flush();
-				System.out.println(" DONE!");	
-			}else{
-				System.out.println(baseDir + " Exists?: " + fBaseDir.exists() + " IsDirectory?: " + fBaseDir.isDirectory());
-				System.out.println(sock.getInetAddress() + " requested " + fileName + ", but it does not exist!");
-				ObjectOutputStream oos = new ObjectOutputStream(sock.getOutputStream());
-				oos.writeObject("0");
-				oos.flush();
-			} */
 			oos.close();
 			ois.close();
 			sock.close();
 		}
 	}
 	
-	public static void sendFile(File dir, Socket sock) throws Exception { 
-		byte[] mybytearray = new byte[(int) dir.length()];
-		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(dir));
-		bis.read(mybytearray, 0, mybytearray.length);
-		OutputStream os = sock.getOutputStream();
-		os.write(mybytearray, 0, mybytearray.length);
-		os.flush();
+	public static void sendFile(File dir) throws Exception { 
+		byte[] buff = new byte[sock.getSendBufferSize()];
+		int bytesRead = 0;
+		
+		InputStream in = new FileInputStream(dir);
 
-		os.close();
-		bis.close();
+		while((bytesRead = in.read(buff))>0)
+		{
+			oos.write(buff,0,bytesRead);
+		}
+		oos.flush();
+		in.close();
+		// after sending a file you need to close the socket and reopen one.
+		oos.flush();
+		oos.close();
+		ois.close();
+		sock.close();
+		sock = servsock.accept();
+		oos = new ObjectOutputStream(sock.getOutputStream());
+		ois = new ObjectInputStream(sock.getInputStream());
 	}
 
-	public static void receiveFile(File dir, Socket sock) throws Exception {
-		byte[] mybytearray = new byte[1024]; // receive file from server
-		InputStream is = sock.getInputStream();
-		FileOutputStream fos = new FileOutputStream(dir);
-		BufferedOutputStream bos = new BufferedOutputStream(fos);
-		int bytesRead = 0;
-		int current = 0;
-		while((bytesRead = is.read(mybytearray, 0, mybytearray.length)) != -1){
-			bos.write(mybytearray, 0, bytesRead);
-			current = current + bytesRead;
+	public static void receiveFile(File dir) throws Exception {
+		FileOutputStream wr = new FileOutputStream(dir);
+		byte[] outBuffer = new byte[sock.getReceiveBufferSize()];
+		int bytesReceived = 0;
+		while((bytesReceived = ois.read(outBuffer))>0)
+		{
+			wr.write(outBuffer,0,bytesReceived);
 		}
-
-		bos.close();
-		fos.close();
-		is.close();
+		wr.flush();
+		wr.close();
+		
+		ois.close();
+		oos.close();
+		sock.close();
+		sock = servsock.accept();
+		ois = new ObjectInputStream(sock.getInputStream());
+		oos = new ObjectOutputStream(sock.getOutputStream());
 	}
 }

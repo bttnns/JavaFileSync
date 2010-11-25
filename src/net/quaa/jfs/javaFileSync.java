@@ -18,7 +18,7 @@ public class javaFileSync {
 					localName = cleanUpInput(args[1]);
 					testing(new File(localName), args[1]);
 				} else if (args[0].equalsIgnoreCase("-c") && args.length > 1 && args.length < 4) {
-					localName = cleanUpInput(args[1]);
+					localName = cleanUpInput(args[2]);
 					client(localName, args[2], args[1]);
 				} else {
 					System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
