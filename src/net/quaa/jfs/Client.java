@@ -1,9 +1,12 @@
 package net.quaa.jfs;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -43,17 +46,17 @@ public class Client {
 		File baseDir = new File(fullDirName); // skipping the base dir as it already should be set up on the server
 		String[] children = baseDir.list();
 
-	    for (int i=0; i<children.length; i++) {
-	    	visitAllDirsAndFiles(new File(baseDir, children[i]));
-	    }
-	    Vector<String> vecDONE = new Vector<String>();
-	    vecDONE.add(DONE);
+		for (int i=0; i < children.length; i++) {
+			visitAllDirsAndFiles(new File(baseDir, children[i]));
+		}
+		Vector<String> vecDONE = new Vector<String>();
+		vecDONE.add(DONE);
 		oos.writeObject(vecDONE);
 		oos.flush();
 		reinitConn();
-	
+
 		if(fExists)
-			updateFromServer(sock, fullDirName);
+			updateFromServer();
 
 		oos.close();
 		ois.close();
@@ -62,7 +65,7 @@ public class Client {
 
 	// Process all files and directories under dir
 	private static void visitAllDirsAndFiles(File dir) throws Exception{
-			Vector<String> vec = new Vector<String>();
+		Vector<String> vec = new Vector<String>();
 		vec.add(dir.getName());
 		vec.add(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullDirName) + fullDirName.length())));
 
@@ -102,11 +105,11 @@ public class Client {
 			} // no need to check if update to server == 2 because we do nothing here
 		}
 		if (dir.isDirectory()) {
-	        String[] children = dir.list();
-	        for (int i=0; i<children.length; i++) {
-	            visitAllDirsAndFiles(new File(dir, children[i]));
-	        }
-	    }
+			String[] children = dir.list();
+			for (int i=0; i<children.length; i++) {
+				visitAllDirsAndFiles(new File(dir, children[i]));
+			}
+		}
 	}
 
 	private static void sendFile(File dir) throws Exception {
@@ -141,11 +144,88 @@ public class Client {
 		printDebug(false, dir);
 	}
 
-	private static void updateFromServer(Socket sock, String fullDirName) throws Exception {
-		//oos = new ObjectOutputStream(sock.getOutputStream()); // send fileName LastModified to server
-		//ois = new ObjectInputStream(sock.getInputStream()); // receive SEND or RECEIVE
-		//File f = new File(fullDirName);
-// need to implement this part
+	private static void updateFromServer() throws Exception {
+		Boolean isDone = false;
+		Boolean nAll = false;
+		while(!isDone) {
+			String path = (String) ois.readObject();
+
+			if(path.equals(DONE)) {
+				isDone = true;
+				break;
+			}
+
+			oos.writeObject(new Boolean(true));
+			oos.flush();
+
+			File newFile = new File(fullDirName + path);
+
+			Boolean isDirectory = (Boolean) ois.readObject();
+
+			oos.writeObject(new Boolean(newFile.exists()));
+			oos.flush();
+			if (!newFile.exists()) {
+				ois.readObject();
+				String userInput = null;
+				if (!nAll) {
+					if (isDirectory) {
+						System.out.println("CONFLICT with " + fullDirName + path + "! The directory exists on the server but not this client.");
+						System.out.println("Would you like to delete the server's directory (if no we would create the directory on this client)?");
+					} else {
+						System.out.println("CONFLICT with " + fullDirName + path + "! The file exists on the server but not this client.");
+						System.out.println("Would you like to delete the server's file (if no we would create the file on this client)?");						
+					}
+					System.out.println("Type 'y' for yes, 'n' for no, 'a' for no to all, 'd' to do nothing");
+					BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+					try {
+						userInput = br.readLine();
+					} catch (IOException ioe) {
+						System.out.println("You did not input a correct value, will do nothing.");
+					}
+				} else // if n to all then just set input to n!
+					userInput = "n";
+				if (userInput.equalsIgnoreCase("a") || userInput.equalsIgnoreCase("'a'")) {
+					nAll = true;
+					userInput = "n";
+				}
+				if (userInput.equalsIgnoreCase("y") || userInput.equalsIgnoreCase("'y'")) {
+					if (isDirectory) {
+						oos.writeObject(new Boolean(true)); // reply with yes to delete the server's copy
+						oos.flush();
+					} else {
+						oos.writeObject(new Integer(1));
+						oos.flush();
+					}
+				} else if (userInput.equalsIgnoreCase("n") || userInput.equalsIgnoreCase("'n'")) {
+					if (isDirectory) {
+						newFile.mkdir();
+						oos.writeObject(new Boolean(false));
+						oos.flush();
+					} else {
+						oos.writeObject(new Integer(0));
+						oos.flush();
+						receiveFile(newFile);
+
+						oos.writeObject(new Boolean(true));
+						oos.flush();
+
+						Long lastModified = (Long) ois.readObject();
+						newFile.setLastModified(lastModified);
+
+						oos.writeObject(new Boolean(true));
+						oos.flush();
+					}
+				} else {
+					if (isDirectory) {
+						oos.writeObject(new Boolean(false));
+						oos.flush();
+					} else {
+						oos.writeObject(new Integer(2));
+						oos.flush();
+					}
+				}
+			}
+		}
 	}
 
 	private static void printDebug(Boolean sending, File dir){

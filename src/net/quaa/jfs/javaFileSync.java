@@ -86,7 +86,7 @@ public class javaFileSync {
 	public static void visitAllDirsAndFiles(File dir) {
 	    //process(dir);
 		System.out.println("Name: " + dir.getName() + " Modified: " + dir.lastModified() + " Size: " + dir.length());
-		System.out.println(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullPathName) + fullPathName.length())) + " Directory? " + dir.isDirectory());
+		System.out.println(fullPathName + dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullPathName)  + fullPathName.length())) + " Directory? " + dir.isDirectory());
 	    if (dir.isDirectory()) {
 	        String[] children = dir.list();
 	        for (int i=0; i<children.length; i++) {

@@ -17,6 +17,7 @@ public class Server {
 	private static ObjectOutputStream oos;
 	private static ObjectInputStream ois;
 	private static ServerSocket servsock;
+	private static String baseDir;
 
 	public Server(int port) {
 		PORT_NUMBER = port;
@@ -30,7 +31,7 @@ public class Server {
 			sock = servsock.accept();
 			ois = new ObjectInputStream(sock.getInputStream());
 
-			String baseDir = (String) ois.readObject();
+			baseDir = (String) ois.readObject();
 			File fBaseDir = new File(baseDir);
 			Boolean baseDirExists = fBaseDir.exists();
 
@@ -101,15 +102,71 @@ public class Server {
 					}
 				}
 			}
+			
+			File baseDirFile = new File(baseDir);
+			if(baseDirExists)
+				visitAllDirsAndFiles(baseDirFile);
 
-			if(baseDirExists){
-// need to implement this section
-			}
-
+			oos.writeObject(new String(DONE));
+			oos.flush();
+			
 			oos.close();
 			ois.close();
 			sock.close();
 		}
+	}
+
+	private static void visitAllDirsAndFiles(File dir) throws Exception {
+		oos.writeObject(new String(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(baseDir) + baseDir.length()))));
+		oos.flush();
+
+		ois.readObject();
+
+		Boolean isDirectory = dir.isDirectory();
+		oos.writeObject(new Boolean(isDirectory));
+		oos.flush();
+
+		if (isDirectory) {
+			if (!(Boolean) ois.readObject()) {
+				oos.writeObject(new Boolean(true));
+				oos.flush();
+
+				Boolean delete = (Boolean) ois.readObject();
+
+				if (delete) {
+					deleteAllDirsAndFiles(dir);
+					return;
+				} //ELSE DO NOTHING
+			}
+		} else {
+			if (!(Boolean) ois.readObject()) {
+				oos.writeObject(new Boolean(true));
+				oos.flush();
+
+				Integer delete = (Integer) ois.readObject();
+
+				if (delete == 1) {
+					dir.delete();
+					return;
+				} else if (delete == 0) {
+					sendFile(dir);
+
+					ois.readObject();
+
+					oos.writeObject(new Long(dir.lastModified()));
+					oos.flush();
+
+					ois.readObject();
+				} // ELSE DO NOTHING!
+			}
+		}
+
+	    if (dir.isDirectory()) {
+	        String[] children = dir.list();
+	        for (int i = 0; i < children.length; i++) {
+	            visitAllDirsAndFiles(new File(dir, children[i]));
+	        }
+	    }
 	}
 
 	private static void sendFile(File dir) throws Exception {
@@ -147,5 +204,15 @@ public class Server {
 		sock = servsock.accept();
 		oos = new ObjectOutputStream(sock.getOutputStream());
 		ois = new ObjectInputStream(sock.getInputStream());
+	}
+	
+	private static void deleteAllDirsAndFiles(File dir) {
+	    if (dir.isDirectory()) {
+	        String[] children = dir.list();
+	        for (int i=0; i<children.length; i++) {
+	            deleteAllDirsAndFiles(new File(dir, children[i]));
+	        }
+	    }
+	    dir.delete();
 	}
 }

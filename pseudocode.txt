@@ -34,24 +34,9 @@ CLIENT: dirName
 Server: exists = TRUE or FALSE
    
 if directory
-old   CLIENT: dirName
-old   SERVER: true
-old   CLIENT: isDirectory = TRUE
-old   SERVER: true
-old   CLIENT: PATH
-old   SERVER: true
-
    CLIENT: VECTOR<STRING> = dirName, PATH
    SERVER: true
 else
-old   CLIENT: fileName
-old   SERVER: true
-old   CLIENT: isDirectory = FALSE
-old   SERVER: true
-old   CLIENT: PATH
-old   SERVER: true
-old   CLIENT: lastModified
-
    CLIENT: VECTOR<STRING> = fileName, PATH, lastModified
    SERVER: TRUE or FALSE (update?)
    if TRUE
@@ -71,38 +56,39 @@ CLIENT: DONE
 // begin 2 way talking here.
 
 if EXISTS = TRUE
+   SERVER: PATH
+   CLIENT: OK
+   SERVER: TRUE or FALSE (dir)
    if directory
-      SERVER: dirName DiR
-      CLIENT: TRUE or FALSE
+      CLIENT: TRUE or FALSE (exists)
       if FALSE
          SERVER: TRUE
          CLIENT: ask user if he/she would like to delete servers copy
                  reply Y (delete) or N (get servers copy)
                  or D (do nothing)
-         if Y
+         if Y (1)
             SERVER: delete directory
-         if N
+         if N (0)
             CLIENT: make directory
-         if D
+         if D (0) (default)
             do nothing
          end
       end
-   else if TRUE
-      SERVER: fileName
+   else NOT DIRECTORY
       CLIENT: TRUE or FALSE
-      if TRUE
+      if FALSE (client does not have)
          SERVER: TRUE
          CLIENT: ask user if he/she would like to delete servers copy
                  reply Y (delete) or N (get servers copy)
                  or D (do nothing)
-         if Y
+         if Y (1)
             SERVER: delete file
-         if N
+         if N (0)
             SERVER: SEND FILE
             CLIENT: OK
             SERVER: SEND LASTMODIFIED
             CLIENT: OK
-         if D
+         if D (2)(DEFAULT)
             do nothing
          end
       end
