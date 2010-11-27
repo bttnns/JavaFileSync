@@ -176,9 +176,11 @@ public class Client {
 					if (isDirectory) {
 						System.out.println("CONFLICT with " + fullDirName + path + "! The directory exists on the server but not this client.");
 						System.out.println("Would you like to delete the server's directory (if no we would create the directory on this client)?");
+						System.out.println("No to all would always accept the server's copy onto this client");
 					} else {
 						System.out.println("CONFLICT with " + fullDirName + path + "! The file exists on the server but not this client.");
 						System.out.println("Would you like to delete the server's file (if no we would create the file on this client)?");						
+						System.out.println("No to all would always accept the server's copy onto this client");
 					}
 					System.out.println("Type 'y' for yes, 'n' for no, 'a' for no to all, 'd' to do nothing");
 					BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

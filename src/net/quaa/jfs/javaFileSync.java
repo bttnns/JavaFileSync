@@ -21,10 +21,10 @@ public class javaFileSync {
 					localName = cleanUpInput(args[2]);
 					client(localName, args[2], args[1]);
 				} else {
-					System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
+					System.out.println("Invalid entry. Usage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
 				}
 			} else {
-				System.out.println("Invalid entry. Useage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
+				System.out.println("Invalid entry. Usage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
