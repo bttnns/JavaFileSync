@@ -31,6 +31,7 @@ public class Client {
 		System.out.println("Client Selected!");
 		System.out.println("Dir to sync: " + dirName);
 		System.out.println("Server IP: " + serverIP);
+		System.out.print("Syncing");
 	}
 
 	public void runClient() throws Exception {
@@ -61,10 +62,13 @@ public class Client {
 		oos.close();
 		ois.close();
 		sock.close();
+		System.out.println();
+		System.out.println("Finished sync");
 	}
 
 	// Process all files and directories under dir
 	private static void visitAllDirsAndFiles(File dir) throws Exception{
+		System.out.print(".");
 		Vector<String> vec = new Vector<String>();
 		vec.add(dir.getName());
 		vec.add(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullDirName) + fullDirName.length())));
@@ -126,7 +130,7 @@ public class Client {
 		oos.flush();
 		reinitConn();
 
-		printDebug(true, dir);
+//		printDebug(true, dir);
 	}
 
 	private static void receiveFile(File dir) throws Exception {
@@ -141,13 +145,14 @@ public class Client {
 
 		reinitConn();
 
-		printDebug(false, dir);
+//		printDebug(false, dir);
 	}
 
 	private static void updateFromServer() throws Exception {
 		Boolean isDone = false;
 		Boolean nAll = false;
 		while(!isDone) {
+			System.out.print(".");
 			String path = (String) ois.readObject();
 
 			if(path.equals(DONE)) {

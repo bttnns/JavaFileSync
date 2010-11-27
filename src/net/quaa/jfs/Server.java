@@ -29,11 +29,14 @@ public class Server {
 		servsock = new ServerSocket(PORT_NUMBER);
 		while (true) {
 			sock = servsock.accept();
+
 			ois = new ObjectInputStream(sock.getInputStream());
 
 			baseDir = (String) ois.readObject();
 			File fBaseDir = new File(baseDir);
 			Boolean baseDirExists = fBaseDir.exists();
+
+			System.out.println("New client connected! IP: " + sock.getInetAddress().toString() + " Directory: " + baseDir);
 
 			if(!baseDirExists)
 				fBaseDir.mkdir();
@@ -113,6 +116,7 @@ public class Server {
 			oos.close();
 			ois.close();
 			sock.close();
+			System.out.println("Finished sync");
 		}
 	}
 

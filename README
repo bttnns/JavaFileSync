@@ -1,4 +1,35 @@
-A simple java file sync program I currently am developing for my 
-networking class
+Java File Sync
+Brian Tannous
+November 2010
 
-This program is very simple but effective.
+------------------------------About------------------------------
+Java File Sync is a simple directory tree synchronization program
+written in java.  Jfs is currently a command line only program
+and is can be ran anywhere.  It requires a sever to host the sync
+directories.  You can easily sync any directory with any machine
+on any network.  Jfs uses sockets to communicate back and forth
+and is fairly efficient.
+
+---------------------------How to Use----------------------------
+Usage is extremely simple, below are examples of both client and
+server arguments.  A pre-compiled .jar file is found in the
+executables directory.
+
+---Server
+The server is a vital part of Jfs as it is what hosts the syncing
+directories.  You will need to run Jfs server as:
+
+   java -jar jfs.jar -s
+
+The Jfs server will run until you choose to close it by CTL + C
+
+---Client
+The client is the machine you currently would like to sync any
+given directory with the server.  
+You will need to run Jfs client as:
+
+   java -jar jfs.jar -c Server.IP DirectoryToSync
+      ex: java -jar jfs.jar -c 192.168.1.100 ~/working/
+
+The Jfs client will connect to the given server and close when
+syncing is finished.
