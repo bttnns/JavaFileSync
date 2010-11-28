@@ -33,3 +33,10 @@ You will need to run Jfs client as:
 
 The Jfs client will connect to the given server and close when
 syncing is finished.
+
+To list the directories that the server hosts use:
+   java -jar jfs.jar -c Server.IP -ls
+      ex: java -jar jfs.jar -c 192.168.1.100 -ls
+
+You then can create a hosted directory and sync it with the
+server by executing the command above.

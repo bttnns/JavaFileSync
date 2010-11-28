@@ -21,10 +21,10 @@ public class javaFileSync {
 					localName = cleanUpInput(args[2]);
 					client(localName, args[2], args[1]);
 				} else {
-					System.out.println("Invalid entry. Usage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
+					System.out.println("Invalid entry. Usage: java javaFileSync [-s] [-c [server IP] [dir to sync OR -ls]]");
 				}
 			} else {
-				System.out.println("Invalid entry. Usage: java javaFileSync [-s] [-c [server IP] [dir to sync]]");
+				System.out.println("Invalid entry. Usage: java javaFileSync [-s] [-c [server IP] [dir to sync OR -ls]]");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -42,20 +42,29 @@ public class javaFileSync {
 	}
 	
 	public static void testing(File dirName, String fullPathName) throws Exception {
-		visitAllDirsAndFiles(dirName);
-
+		File f = new File("./");
+		String[] children = f.list();
+        for (int i=0; i<children.length; i++) {
+        	File newF = new File(f, children[i]);
+        	if(newF.isDirectory())
+        		System.out.print(newF.getName() + " ");
+        }
+        System.out.println();
 	}
 	
 	public static String cleanUpInput(String userInput) throws Exception {
-		
+
+		if(userInput.equalsIgnoreCase("-ls"))
+			return userInput;
+
 		File f = new File(userInput);
-		
+
 		if(!f.isDirectory()) {
 			System.out.println("Please input a directory instead of a file!");
 			Thread.sleep(10);
 			System.exit(0);
 		}
-		
+
 		String localDirName = userInput; //cleaning up the users input
 		if(userInput.contains("/")){
 			if(userInput.lastIndexOf("/") != (userInput.length() - 1)) {
@@ -66,7 +75,7 @@ public class javaFileSync {
 					localDirName = localDirName.substring(localDirName.lastIndexOf("/"));
 			}
 		}
-		
+
 		if(localDirName.equals(".")){
 			System.out.println("Please input a dir name instead of ./ or .");
 			Thread.sleep(10);

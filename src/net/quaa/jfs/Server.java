@@ -33,90 +33,106 @@ public class Server {
 			ois = new ObjectInputStream(sock.getInputStream());
 
 			baseDir = (String) ois.readObject();
-			File fBaseDir = new File(baseDir);
-			Boolean baseDirExists = fBaseDir.exists();
+
+			oos = new ObjectOutputStream(sock.getOutputStream());
 
 			System.out.println("New client connected! IP: " + sock.getInetAddress().toString() + " Directory: " + baseDir);
 
-			if(!baseDirExists)
-				fBaseDir.mkdir();
+			if(baseDir.equalsIgnoreCase("-ls")) {
+				Vector<String> directories = new Vector<String>();
+				File serverBase = new File("./");
+				String[] children = serverBase.list();
+		        for (int i=0; i<children.length; i++) {
+		        	File newF = new File(serverBase, children[i]);
+		        	if(newF.isDirectory())
+		        		directories.add(newF.getName());
+		        }
+		        oos.writeObject(directories);
+		        oos.flush();
+			} else {
+				File fBaseDir = new File(baseDir);
+				Boolean baseDirExists = fBaseDir.exists();
 
-			oos = new ObjectOutputStream(sock.getOutputStream());
-			oos.writeObject(new Boolean(baseDirExists));
-			oos.flush();
+				if(!baseDirExists)
+					fBaseDir.mkdir();
 
-			Boolean isClientDone = false;
+				oos.writeObject(new Boolean(baseDirExists));
+				oos.flush();
 
-			while (!isClientDone) {
-				Vector<String> vec = (Vector<String>) ois.readObject();
-				reinitConn();
+				Boolean isClientDone = false;
 
-				if(vec.elementAt(0).equals(DONE)) {  // check if we are done
-					isClientDone = true; // if so break out
-					break;
-				}
+				while (!isClientDone) {
+					Vector<String> vec = (Vector<String>) ois.readObject();
+					reinitConn();
 
-				if(vec.size() == 2) { // if the size is 2 then this is a directory
-					File newDir = new File(baseDir, vec.elementAt(1));
-					if (!newDir.exists())
-						newDir.mkdir();
+					if(vec.elementAt(0).equals(DONE)) {  // check if we are done
+						isClientDone = true; // if so break out
+						break;
+					}
 
-					oos.writeObject(new Boolean(true)); // tell client that we are ready
-					oos.flush();
-				} else {
-					File newFile = new File(baseDir, vec.elementAt(1));
-					Integer updateFromClient = 2; // default = do nothing
+					if(vec.size() == 2) { // if the size is 2 then this is a directory
+						File newDir = new File(baseDir, vec.elementAt(1));
+						if (!newDir.exists())
+							newDir.mkdir();
 
-					Long lastModified = new Long(vec.elementAt(2));
-					if (!newFile.exists() || (newFile.lastModified() <= lastModified))
-						updateFromClient = 1;
-					else
-						updateFromClient = 0;
-
-					if(newFile.exists() && newFile.lastModified() == lastModified)
-						updateFromClient = 2;
-
-					if(updateFromClient == 1) { // If true receive file from client
-						newFile.delete();
-
-						oos.writeObject(new Integer(updateFromClient));
+						oos.writeObject(new Boolean(true)); // tell client that we are ready
 						oos.flush();
+					} else {
+						File newFile = new File(baseDir, vec.elementAt(1));
+						Integer updateFromClient = 2; // default = do nothing
 
-						receiveFile(newFile);
+						Long lastModified = new Long(vec.elementAt(2));
+						if (!newFile.exists() || (newFile.lastModified() <= lastModified))
+							updateFromClient = 1;
+						else
+							updateFromClient = 0;
 
-						newFile.setLastModified(lastModified);
+						if(newFile.exists() && newFile.lastModified() == lastModified)
+							updateFromClient = 2;
 
-						oos.writeObject(new Boolean(true));
-					} else if (updateFromClient == 0) { // if false send file to client
-						oos.writeObject(new Integer(updateFromClient));
-						oos.flush();
+						if(updateFromClient == 1) { // If true receive file from client
+							newFile.delete();
 
-						ois.readObject();
+							oos.writeObject(new Integer(updateFromClient));
+							oos.flush();
 
-						sendFile(newFile);
+							receiveFile(newFile);
 
-						ois.readObject();
+							newFile.setLastModified(lastModified);
 
-						oos.writeObject(new Long(newFile.lastModified()));
-						oos.flush();
-					} else { //updateFromClient == 2 // do nothing
-						oos.writeObject(new Integer(updateFromClient));
-						oos.flush();
+							oos.writeObject(new Boolean(true));
+						} else if (updateFromClient == 0) { // if false send file to client
+							oos.writeObject(new Integer(updateFromClient));
+							oos.flush();
+
+							ois.readObject();
+
+							sendFile(newFile);
+
+							ois.readObject();
+
+							oos.writeObject(new Long(newFile.lastModified()));
+							oos.flush();
+						} else { //updateFromClient == 2 // do nothing
+							oos.writeObject(new Integer(updateFromClient));
+							oos.flush();
+						}
 					}
 				}
-			}
-			
-			File baseDirFile = new File(baseDir);
-			if(baseDirExists)
-				visitAllDirsAndFiles(baseDirFile);
 
-			oos.writeObject(new String(DONE));
-			oos.flush();
-			
+				File baseDirFile = new File(baseDir);
+				if(baseDirExists)
+					visitAllDirsAndFiles(baseDirFile);
+
+				oos.writeObject(new String(DONE));
+				oos.flush();
+				System.out.print("Finished sync...");
+
+			}
 			oos.close();
 			ois.close();
 			sock.close();
-			System.out.println("Finished sync");
+			System.out.println("Client disconnected.");
 		}
 	}
 
@@ -165,12 +181,12 @@ public class Server {
 			}
 		}
 
-	    if (dir.isDirectory()) {
-	        String[] children = dir.list();
-	        for (int i = 0; i < children.length; i++) {
-	            visitAllDirsAndFiles(new File(dir, children[i]));
-	        }
-	    }
+		if (dir.isDirectory()) {
+			String[] children = dir.list();
+			for (int i = 0; i < children.length; i++) {
+				visitAllDirsAndFiles(new File(dir, children[i]));
+			}
+		}
 	}
 
 	private static void sendFile(File dir) throws Exception {
@@ -209,14 +225,14 @@ public class Server {
 		oos = new ObjectOutputStream(sock.getOutputStream());
 		ois = new ObjectInputStream(sock.getInputStream());
 	}
-	
+
 	private static void deleteAllDirsAndFiles(File dir) {
-	    if (dir.isDirectory()) {
-	        String[] children = dir.list();
-	        for (int i=0; i<children.length; i++) {
-	            deleteAllDirsAndFiles(new File(dir, children[i]));
-	        }
-	    }
-	    dir.delete();
+		if (dir.isDirectory()) {
+			String[] children = dir.list();
+			for (int i=0; i<children.length; i++) {
+				deleteAllDirsAndFiles(new File(dir, children[i]));
+			}
+		}
+		dir.delete();
 	}
 }

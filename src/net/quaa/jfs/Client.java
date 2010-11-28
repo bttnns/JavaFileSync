@@ -31,7 +31,6 @@ public class Client {
 		System.out.println("Client Selected!");
 		System.out.println("Dir to sync: " + dirName);
 		System.out.println("Server IP: " + serverIP);
-		System.out.print("Syncing");
 	}
 
 	public void runClient() throws Exception {
@@ -41,29 +40,42 @@ public class Client {
 		oos.writeObject(new String(dirName));
 		oos.flush();
 
-		ois = new ObjectInputStream(sock.getInputStream()); // receive if this directory exists
-		Boolean fExists = (Boolean) ois.readObject();
+		ois = new ObjectInputStream(sock.getInputStream()); 
+		if(dirName.equalsIgnoreCase("-ls")) {
+			Vector<String> directories = (Vector<String>) ois.readObject();
+			System.out.println("The directories available are: ");
+			for (int x = 0; x < directories.size(); x++) {
+				System.out.print(directories.elementAt(x) + " ");
+			}
+			System.out.println();
+			System.out.println();
+			System.out.println("To sync one of these directories please create the one you are wanting to sync and run the client again with that directory.");
+		} else {
+			System.out.print("Syncing");
+			// receive if this directory exists
+			Boolean fExists = (Boolean) ois.readObject();
 
-		File baseDir = new File(fullDirName); // skipping the base dir as it already should be set up on the server
-		String[] children = baseDir.list();
+			File baseDir = new File(fullDirName); // skipping the base dir as it already should be set up on the server
+			String[] children = baseDir.list();
 
-		for (int i=0; i < children.length; i++) {
-			visitAllDirsAndFiles(new File(baseDir, children[i]));
+			for (int i=0; i < children.length; i++) {
+				visitAllDirsAndFiles(new File(baseDir, children[i]));
+			}
+			Vector<String> vecDONE = new Vector<String>();
+			vecDONE.add(DONE);
+			oos.writeObject(vecDONE);
+			oos.flush();
+			reinitConn();
+
+			if(fExists)
+				updateFromServer();
+
+			System.out.println();
+			System.out.println("Finished sync");
 		}
-		Vector<String> vecDONE = new Vector<String>();
-		vecDONE.add(DONE);
-		oos.writeObject(vecDONE);
-		oos.flush();
-		reinitConn();
-
-		if(fExists)
-			updateFromServer();
-
 		oos.close();
 		ois.close();
 		sock.close();
-		System.out.println();
-		System.out.println("Finished sync");
 	}
 
 	// Process all files and directories under dir
@@ -130,7 +142,7 @@ public class Client {
 		oos.flush();
 		reinitConn();
 
-//		printDebug(true, dir);
+		//		printDebug(true, dir);
 	}
 
 	private static void receiveFile(File dir) throws Exception {
@@ -145,7 +157,7 @@ public class Client {
 
 		reinitConn();
 
-//		printDebug(false, dir);
+		//		printDebug(false, dir);
 	}
 
 	private static void updateFromServer() throws Exception {
