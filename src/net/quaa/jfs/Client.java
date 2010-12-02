@@ -21,6 +21,7 @@ public class Client {
 	private static Socket sock;
 	private static ObjectInputStream ois;
 	private static ObjectOutputStream oos;
+	private static int fileCount = 0;
 
 	public Client(String dirName, String fullDirName, String serverIP, int port) {
 		Client.dirName = dirName;
@@ -80,7 +81,11 @@ public class Client {
 
 	// Process all files and directories under dir
 	private static void visitAllDirsAndFiles(File dir) throws Exception{
-		System.out.print(".");
+		if (fileCount % 20 == 0) {
+			System.out.print(".");
+			fileCount = 0;
+		}
+		fileCount++;
 		Vector<String> vec = new Vector<String>();
 		vec.add(dir.getName());
 		vec.add(dir.getAbsolutePath().substring((dir.getAbsolutePath().indexOf(fullDirName) + fullDirName.length())));
@@ -164,7 +169,11 @@ public class Client {
 		Boolean isDone = false;
 		Boolean nAll = false;
 		while(!isDone) {
-			System.out.print(".");
+			if (fileCount % 20 == 0) {
+				System.out.print(".");
+				fileCount = 0;
+			}
+			fileCount++;
 			String path = (String) ois.readObject();
 
 			if(path.equals(DONE)) {
